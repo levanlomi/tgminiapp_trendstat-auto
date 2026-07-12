@@ -1,0 +1,3006 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>TrendStat Auto</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-cyan: #22d3ee;
+            --accent-blue: #3b82f6;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+            /* Переменные для СВЕТЛОЙ темы */
+            body.light-theme {
+                        --bg-color: #f1f5f9;       /* Светло-серый фон */
+                        --card-bg: #ffffff;        /* Белые карточки */
+                        --text-main: #0f172a;      /* Темно-синий/черный текст */
+                        --text-dim: #64748b;       /* Серый текст подписей */
+                        --border-color: #cbd5e1;
+                    }
+
+                    /* Переопределяем цвета Сводки ИИ для светлой темы */
+            body.light-theme .ai-insight {
+                background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+                border: 1px solid var(--border-color);
+                color: var(--text-main);
+            }
+
+                    /* Плавный переход цветов при смене темы */
+                    body {
+                        transition: background-color 0.3s ease, color 0.3s ease;
+                    }
+
+                    /* Стили для кнопки переключения темы */
+                    .theme-toggle-btn {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    padding: 8px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                    }
+
+                    /* Цвет иконки будет меняться вместе с основным текстом темы */
+                    .theme-toggle-btn svg {
+                    width: 20px;
+                    height: 20px;
+                    /* Мы добавляем stroke, чтобы линии были видны, 
+                    и оставляем fill для солнца */
+                    stroke: var(--text-main); 
+                    fill: none; 
+                    transition: transform 0.3s ease;
+                }
+
+                /* Чтобы солнце оставалось залитым, если захочешь */
+                body.light-theme .theme-toggle-btn svg {
+                    fill: var(--text-main);
+                }
+
+                    .theme-toggle-btn:hover {
+                        background-color: rgba(255, 255, 255, 0.05);
+                    }
+                    
+                    body.light-theme .theme-toggle-btn:hover {
+                        background-color: rgba(0, 0, 0, 0.05);
+                    }
+
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h1 { 
+            font-size: 20px; /* Уменьшили шрифт, чтобы заголовок был компактнее */
+            margin: 0; 
+            display: flex;
+            flex-direction: column; /* Ставим подзаголовок строго под названием */
+            gap: 2px;
+        }
+
+        .sub-title {
+            font-size: 11px;
+            font-weight: normal;
+            color: var(--text-dim);
+        }
+
+    
+        /* Вкладки */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            cursor: grab;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .tabs.is-dragging {
+            cursor: grabbing;
+            user-select: none;
+        }
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tab {
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+        .tab.active {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* KPI Карточки */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .kpi-value {font-size: 18px; /* Было 22px */
+            font-weight: bold; 
+            margin-bottom: 4px;  }
+        .kpi-label { font-size: 12px; color: var(--text-dim); line-height: 1.2; }
+
+        /* Графики */
+        .chart-container {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        h2 { font-size: 16px; margin-top: 0; margin-bottom: 16px; }
+
+        h2 { font-size: 16px; margin-top: 0; margin-bottom: 16px; }
+
+        
+        .chart-subtitle {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: -12px; /* Подтягиваем поближе к заголовку h2 */
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .only-mobile { display: none; }
+        .only-desktop { display: inline; }
+        
+
+        /* Сводка ИИ */
+        .ai-insight {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .ai-insight strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+        #ai-text,
+        #ai-text-new,
+        #ai-text-used,
+        #ai-text-agg {
+            display: block;
+            white-space: pre-wrap;
+        }
+
+        /* Сетка для блока Индекса */
+        .index-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 2.5fr); 
+            gap: 10px;
+            align-items: stretch; /* Растягиваем контейнеры на одну высоту */
+        }
+
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Центрируем всё */
+            align-items: center;
+            position: relative;
+            border-right: 1px solid #334155; 
+            padding-right: 24px;
+        }
+
+        .gauge-wrapper {
+            width: 100%;
+            max-width: 150px; /* Ограничиваем размер, чтобы круг был аккуратным */
+            margin-bottom: 10px; /* Небольшой отступ до надписи */
+            filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.2)); /* Мягкая тень */
+        }
+
+        .gauge-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .trend-container {
+            position: relative;
+            min-height: 160px;
+        }
+
+        .chart-wrap {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        .chart-wrap--md {
+            height: 260px;
+        }
+
+        body.light-theme .gauge-container {
+            border-right-color: var(--border-color);
+        }
+
+
+
+
+        /* Анимация мигающего курсора ИИ */
+        .typing::after {
+            content: "┃";
+            animation: blink 1s step-end infinite;
+            color: var(--accent-cyan);
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+       
+        /* Логика переключения экранов */
+        .view-section {
+            display: none; /* Скрываем все экраны по умолчанию */
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+        }
+        .view-section.active-view {
+            display: block; /* Показываем только активный */
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+/* === Стили для вкладки АГРЕГАТОРЫ === */
+.top3-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 2.5fr);
+            gap: 10px;
+            align-items: stretch;
+            min-height: 250px;
+        }
+        .top3-share-container {
+            border-right: 1px solid #334155;
+            padding-right: 16px;
+        }
+        body.light-theme .top3-share-container {
+            border-right-color: var(--border-color);
+        }
+        .top3-chart-container {
+            position: relative;
+            width: 100%;
+            height: 230px;
+        }
+
+/* === Стили для вкладки МАРКИ АВТО === */
+        .brands-chart-subtitle {
+            margin-top: 6px;
+            margin-bottom: 4px;
+        }
+        .brands-shares-chart-container {
+            overflow: visible;
+        }
+        .brands-country-block {
+            overflow: visible;
+        }
+        .brands-country-dynamics {
+            margin-top: 0;
+            padding-top: 4px;
+        }
+        .brands-country-dynamics .brands-chart-wrap {
+            margin-top: 0;
+        }
+        .brands-country-legend {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 6px 4px;
+            justify-items: center;
+            margin-top: 10px;
+            margin-bottom: 12px;
+        }
+        .brands-legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 11px;
+            line-height: 1.2;
+            color: var(--text-dim);
+            cursor: pointer;
+            user-select: none;
+            border: none;
+            background: none;
+            padding: 0;
+            min-width: 0;
+            text-align: center;
+        }
+        .brands-legend-item.is-hidden {
+            opacity: 0.35;
+        }
+        .brands-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .brands-shares-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 2px;
+            margin-bottom: 0;
+            padding: 2px 0;
+            overflow: visible;
+        }
+        .brands-share-item {
+            text-align: center;
+            min-width: 0;
+            overflow: visible;
+        }
+        .brands-share-canvas-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            aspect-ratio: 1;
+            margin: 0 auto;
+            overflow: visible;
+        }
+        .brands-share-tooltip {
+            position: fixed;
+            z-index: 1000;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #f8fafc;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+        body.light-theme .brands-share-tooltip {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #111827;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+        }
+        .brands-share-tooltip-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .brands-share-canvas-wrap canvas {
+            display: block;
+            max-width: 100% !important;
+            max-height: 100% !important;
+        }
+        .brands-share-year {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+        .brands-chart-wrap {
+            position: relative;
+            height: 280px;
+            width: 100%;
+        }
+
+        /* === Мобильная адаптация (Telegram Mini App, iPhone, Samsung) === */
+        @media (max-width: 500px) {
+            body {
+                padding: 12px;
+                padding-left: max(12px, env(safe-area-inset-left, 0px));
+                padding-right: max(12px, env(safe-area-inset-right, 0px));
+                padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+            }
+
+            header { margin-bottom: 16px; }
+            h1 { font-size: 18px; }
+            .sub-title { font-size: 10px; line-height: 1.35; }
+
+            .tabs { gap: 6px; margin-bottom: 12px; }
+            .tab { padding: 7px 13px; font-size: 13px; }
+
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .kpi-card { padding: 12px 10px; }
+            .kpi-value { font-size: 17px; }
+            .kpi-label { font-size: 11px; }
+
+            .chart-container { padding: 12px; margin-bottom: 12px; border-radius: 10px; }
+            h2 { font-size: 15px; margin-bottom: 12px; }
+            .chart-subtitle { font-size: 11px; margin-bottom: 10px; }
+            .chart-subtitle br { display: none; }
+
+            .only-desktop { display: none; }
+            .only-mobile { display: inline; }
+
+            .chart-wrap { height: 250px; }
+            .chart-wrap--md { height: 230px; }
+            .brands-chart-wrap { height: 250px; }
+
+            .index-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+                min-height: auto;
+            }
+            .gauge-container {
+                border-right: none;
+                border-bottom: 1px solid #334155;
+                padding-right: 0;
+                padding-bottom: 14px;
+            }
+            body.light-theme .gauge-container {
+                border-bottom: 1px solid var(--border-color);
+                border-right: none;
+            }
+            .gauge-wrapper { max-width: 132px; margin-bottom: 6px; }
+            .gauge-label { font-size: 12px; }
+            .trend-container {
+                height: 210px;
+                min-height: 210px;
+                padding-top: 12px;
+            }
+
+            .top3-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+                min-height: auto;
+            }
+            .top3-share-container {
+                border-right: none;
+                border-bottom: 1px solid #334155;
+                padding-right: 0;
+                padding-bottom: 14px;
+            }
+            body.light-theme .top3-share-container {
+                border-bottom: 1px solid var(--border-color);
+                border-right: none;
+            }
+            .top3-chart-container {
+                height: 240px;
+                padding-top: 12px;
+            }
+
+            .brands-shares-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
+            }
+            .brands-country-legend {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 6px 4px;
+                margin-top: 8px;
+                margin-bottom: 10px;
+            }
+            .brands-legend-item { font-size: 10px; gap: 4px; }
+            .brands-legend-dot { width: 8px; height: 8px; border-width: 1.5px; }
+
+            .ai-insight { padding: 12px; font-size: 13px; }
+        }
+
+        @media (max-width: 360px) {
+            body { padding: 10px; }
+            h1 { font-size: 17px; }
+            .tab { padding: 6px 11px; font-size: 12px; }
+            .kpi-card { padding: 10px 8px; }
+            .kpi-value { font-size: 16px; }
+            .kpi-label { font-size: 10px; }
+            .brands-country-legend {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px 6px;
+            }
+            .chart-wrap { height: 230px; }
+            .chart-wrap--md { height: 210px; }
+            .brands-chart-wrap { height: 230px; }
+            .trend-container { height: 195px; min-height: 195px; }
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>
+                TrendStat Auto 
+                <span class="sub-title">аналитика авторынка России на основе открытых данных</span>
+            </h1>
+            <button id="theme-toggle" class="theme-toggle-btn" title="Сменить тему">🌙</button>
+        </header>
+    
+        <div class="tabs">
+            <div class="tab active" data-target="view-industry">Индустрия</div>
+            <div class="tab" data-target="view-new">Новые авто</div>
+            <div class="tab" data-target="view-used">Поддержанные авто</div>
+            <div class="tab" data-target="view-brands">Марки авто</div>
+            <div class="tab" data-target="view-aggregators">Агрегаторы</div>
+        </div>
+    
+        <!-- === ЭКРАН 1: ИНДУСТРИЯ === -->
+        <div id="view-industry" class="view-section active-view">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-avg">0</div>
+                    <div class="kpi-label">запросов в месяц в среднем</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-yoy">0%</div>
+                    <div class="kpi-label">YTD интереса во всей категории</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-sales-yoy">0%</div>
+                    <div class="kpi-label">YTD продаж автомобилей</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-aggregator">0%</div>
+                    <div class="kpi-label">YTD интереса к агрегаторам</div>
+                </div>
+            </div>
+    
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;">Динамика интереса и продаж в индустрии</h2>
+                <div class="chart-wrap">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+    
+            <div class="chart-container">
+                <h2>Индекс покупательской активности</h2>
+                <div class="chart-subtitle">отношение уровня интереса в категории к количеству покупок автомобилей, <br> нормированное по 10-балльной шкале</div>
+                
+                <div class="index-grid">
+                    <div class="gauge-container">
+                        <div class="gauge-wrapper">
+                            <canvas id="gaugeChart"></canvas>
+                        </div>
+                        <div class="gauge-label">Актуальный индекс</div>
+                    </div>
+                    <div class="trend-container">
+                        <canvas id="indexChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/поддержанных авто в категории</span><span class="only-mobile">Доля продаж новых/поддержанных<br>авто в категории</span></h2>
+                <div class="chart-wrap chart-wrap--md">
+                    <canvas id="industrySalesMixChart"></canvas>
+                </div>
+            </div>
+    
+            <div class="ai-insight">
+                <strong>Краткая сводка ✨</strong>
+                <span id="ai-text">Загрузка аналитики...</span>
+            </div>
+        </div>
+        <!-- === КОНЕЦ ЭКРАНА 1 === -->
+
+        <!-- === ЭКРАН: НОВЫЕ АВТО === -->
+        <div id="view-new" class="view-section">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-new-avg">0</div>
+                    <div class="kpi-label">запросов в месяц в среднем</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-new-share">0%</div>
+                    <div class="kpi-label">доля интереса по новым авто</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-new-yoy">0%</div>
+                    <div class="kpi-label">YTD интереса к новым авто</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-new-sales-yoy">0%</div>
+                    <div class="kpi-label">YTD продаж новых авто</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;">Динамика интереса и продаж новых авто</h2>
+                <div class="chart-wrap">
+                    <canvas id="newMainChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2><span class="only-desktop">Индекс покупательской активности для новых авто</span><span class="only-mobile">Индекс покупательской активности<br>для новых авто</span></h2>
+                <div class="chart-subtitle">отношение уровня интереса к новым авто к количеству их покупок,<br>нормированное по 10-балльной шкале</div>
+                <div class="index-grid">
+                    <div class="gauge-container">
+                        <div class="gauge-wrapper">
+                            <canvas id="newGaugeChart"></canvas>
+                        </div>
+                        <div class="gauge-label">Актуальный индекс</div>
+                    </div>
+                    <div class="trend-container">
+                        <canvas id="newIndexChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/поддержанных авто в категории</span><span class="only-mobile">Доля продаж новых/поддержанных<br>авто в категории</span></h2>
+                <div class="chart-wrap chart-wrap--md">
+                    <canvas id="newSalesMixChart"></canvas>
+                </div>
+            </div>
+
+            <div class="ai-insight">
+                <strong>Краткая сводка ✨</strong>
+                <span id="ai-text-new">Аналитика по новым авто загружается...</span>
+            </div>
+        </div>
+        <!-- === КОНЕЦ ЭКРАНА НОВЫЕ АВТО === -->
+
+        <!-- === ЭКРАН: МАРКИ АВТО === -->
+        <div id="view-brands" class="view-section">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-brands-volume">-</div>
+                    <div class="kpi-label" id="kpi-brands-volume-label">лидер по интересу в 2026 году</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-brands-growth">-</div>
+                    <div class="kpi-label" id="kpi-brands-growth-label">лидер по росту интереса YTD</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-brands-decline">-</div>
+                    <div class="kpi-label" id="kpi-brands-decline-label">ТОП1 в падении интереса YTD</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-brands-top1">-</div>
+                    <div class="kpi-label" id="kpi-brands-top1-label">ТОП1 марка в 2026 году</div>
+                </div>
+            </div>
+
+            <div class="chart-container brands-country-block">
+                <h2 style="margin-bottom: 0px;">Интерес к маркам автомобилей по странам</h2>
+                <div class="chart-subtitle brands-chart-subtitle">Марки авто отнесены к странам на основании страны происхождения бренда</div>
+                <div class="brands-shares-grid">
+                    <div class="brands-share-item">
+                        <div class="brands-share-canvas-wrap"><canvas id="brandsShare2023"></canvas></div>
+                    </div>
+                    <div class="brands-share-item">
+                        <div class="brands-share-canvas-wrap"><canvas id="brandsShare2024"></canvas></div>
+                    </div>
+                    <div class="brands-share-item">
+                        <div class="brands-share-canvas-wrap"><canvas id="brandsShare2025"></canvas></div>
+                    </div>
+                    <div class="brands-share-item">
+                        <div class="brands-share-canvas-wrap"><canvas id="brandsShare2026"></canvas></div>
+                    </div>
+                </div>
+
+                <div id="brands-country-legend" class="brands-country-legend"></div>
+
+                <div class="brands-country-dynamics">
+                    <div class="brands-chart-wrap">
+                        <canvas id="brandsCountryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Динамика интереса к ТОП10 маркам автомобилей</span><span class="only-mobile">Динамика интереса к ТОП10<br>маркам автомобилей</span></h2>
+                <div class="brands-chart-wrap">
+                    <canvas id="brandsTop10Chart"></canvas>
+                </div>
+            </div>
+
+            <div class="ai-insight">
+                <strong>Краткая сводка ✨</strong>
+                <span id="ai-text-brands">Аналитика по маркам авто загружается...</span>
+            </div>
+        </div>
+        <!-- === КОНЕЦ ЭКРАНА МАРКИ АВТО === -->
+
+        <!-- === ЭКРАН: ПОДДЕРЖАННЫЕ АВТО === -->
+        <div id="view-used" class="view-section">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-used-avg">0</div>
+                    <div class="kpi-label">запросов в месяц в среднем</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-used-share">0%</div>
+                    <div class="kpi-label">доля интереса по авто с пробегом</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-used-yoy">0%</div>
+                    <div class="kpi-label">YTD интереса к авто с пробегом</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-used-sales-yoy">0%</div>
+                    <div class="kpi-label">YTD продаж авто с пробегом</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;">Динамика интереса и продаж поддержанных авто</h2>
+                <div class="chart-wrap">
+                    <canvas id="usedMainChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2><span class="only-desktop">Индекс покупательской активности для поддержанных авто</span><span class="only-mobile">Индекс покупательской активности<br>для поддержанных авто</span></h2>
+                <div class="chart-subtitle">отношение уровня интереса к поддержанным авто к количеству их покупок,<br>нормированное по 10-балльной шкале</div>
+                <div class="index-grid">
+                    <div class="gauge-container">
+                        <div class="gauge-wrapper">
+                            <canvas id="usedGaugeChart"></canvas>
+                        </div>
+                        <div class="gauge-label">Актуальный индекс</div>
+                    </div>
+                    <div class="trend-container">
+                        <canvas id="usedIndexChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/поддержанных авто в категории</span><span class="only-mobile">Доля продаж новых/поддержанных<br>авто в категории</span></h2>
+                <div class="chart-wrap chart-wrap--md">
+                    <canvas id="usedSalesMixChart"></canvas>
+                </div>
+            </div>
+
+            <div class="ai-insight">
+                <strong>Краткая сводка ✨</strong>
+                <span id="ai-text-used">Аналитика по поддержанным авто загружается...</span>
+            </div>
+        </div>
+        <!-- === КОНЕЦ ЭКРАНА ПОДДЕРЖАННЫЕ АВТО === -->
+    
+        <!-- === ЭКРАН 2: АГРЕГАТОРЫ === -->
+        <div id="view-aggregators" class="view-section">
+            
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-agg-avg">0</div>
+                    <div class="kpi-label">запросов в месяц по агрегаторам</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-agg-share">0%</div>
+                    <div class="kpi-label">доля запросов от всей категории</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-agg-yoy-main">0%</div>
+                    <div class="kpi-label">YTD интереса к агрегаторам</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-agg-leader">🏆 -</div>
+                    <div class="kpi-label">лидер по интересу в 2026 году</div>
+                </div>
+            </div>
+    
+            <div class="chart-container">
+                <h2 style="margin-bottom: 0px;">Динамика интереса к агрегаторам и продажи</h2>
+                <div class="chart-wrap">
+                    <canvas id="aggMainChart"></canvas>
+                </div>
+            </div>
+    
+            <div class="chart-container">
+                <h2 style="margin-bottom: 12px;"><span class="only-desktop">Сравнение интереса к ТОП3 агрегаторам объявлений</span><span class="only-mobile">Сравнение интереса к ТОП3<br>агрегаторам объявлений</span></h2>
+                <div class="top3-grid">
+                    <div class="gauge-container top3-share-container">
+                        <div class="gauge-wrapper">
+                            <canvas id="top3ShareChart"></canvas>
+                        </div>
+                        <div class="gauge-label">Доли ТОП-3, 2026</div>
+                    </div>
+                    <div class="top3-chart-container">
+                        <canvas id="top3Chart"></canvas>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="ai-insight">
+                <strong>Краткая сводка ✨</strong>
+                <span id="ai-text-agg">Аналитика по агрегаторам загружается...</span>
+            </div>
+        </div>
+        <!-- === КОНЕЦ ЭКРАНА 2 === -->
+    
+    </div> <!-- КОНЕЦ КОНТЕЙНЕРА -->
+
+<script>
+    // 1. Иконки
+    const sunIcon = `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 00-1.41-1.41l-1.06 1.06a.996.996 0 000 1.41c.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 00-1.41-1.41l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`;
+    const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+
+    // 2. Плагины графиков
+    const seasonalityBackground = {
+        id: 'seasonalityBackground',
+        beforeDraw: (chart) => {
+            const { ctx, chartArea, scales: { x } } = chart;
+            const meta = chart.getDatasetMeta(2); 
+            if (meta && meta.hidden) return;
+            const seasonality = chart.config.options.customSeasonality;
+            if (!seasonality) return;
+            ctx.save();
+            ctx.fillStyle = 'rgba(249, 115, 22, 0.12)'; // Более насыщенный оранжевый, 12% плотности 
+            seasonality.forEach((isHigh, index) => {
+                if (isHigh) {
+                    const barWidth = chartArea.width / seasonality.length;
+                    const left = x.getPixelForValue(index) - (barWidth / 2);
+                    ctx.fillRect(left, chartArea.top, barWidth, chartArea.height);
+                }
+            });
+            ctx.restore();
+        }
+    };
+
+    const top3ShareCenterText = {
+        id: 'top3ShareCenterText',
+        beforeDraw(chart) {
+            const { ctx, chartArea: { top, bottom, left, right } } = chart;
+            const leaderPct = chart.config.options.leaderShare;
+            if (leaderPct === undefined) return;
+            ctx.save();
+            const textColor = chart.config.options.centerTextColor || '#f8fafc';
+            const xCenter = (left + right) / 2;
+            const yCenter = (top + bottom) / 2;
+            ctx.font = 'bold 22px sans-serif';
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(leaderPct + '%', xCenter, yCenter);
+            ctx.restore();
+        }
+    };
+
+    const radialCenterText = {
+        id: 'radialCenterText',
+        beforeDraw(chart) {
+            const { ctx, chartArea: { top, bottom, left, right } } = chart;
+            ctx.save();
+            const val = chart.config.options.progressValue;
+            const textColor = chart.config.options.centerTextColor || '#f8fafc';
+            const xCenter = (left + right) / 2;
+            const yCenter = (top + bottom) / 2;
+            
+            
+             // Расчет 10-балльной шкалы (теперь динамически!)
+             const maxPercent = chart.config.options.maxScaleValue; 
+            const score = (val / maxPercent) * 10; 
+            
+            // --- ЭТИ СТРОКИ БЫЛИ УТЕРЯНЫ (Они задают стиль) ---
+            ctx.font = "bold 26px sans-serif"; // Сделал чуть меньше (26px), чтобы влезло " / 10"
+            ctx.fillStyle = textColor;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle"; 
+            // --------------------------------------------------
+            
+            ctx.fillText(score.toFixed(0) + ' / 10', xCenter, yCenter);
+            ctx.restore();
+        }
+    };
+
+    const brandsShareCenterText = {
+        id: 'brandsShareCenterText',
+        beforeDraw(chart) {
+            const label = chart.config.options.centerLabel;
+            if (!label) return;
+
+            const { ctx, chartArea: { top, bottom, left, right } } = chart;
+            ctx.save();
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillStyle = chart.config.options.centerTextColor || '#f8fafc';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, (left + right) / 2, (top + bottom) / 2);
+            ctx.restore();
+        }
+    };
+
+    const legendBottomGap = {
+        id: 'legendBottomGap',
+        afterInit(chart, _args, options) {
+            const legend = chart.legend;
+            if (!legend || legend._gapPatched) return;
+
+            const gap = options.gap ?? 18;
+            const originalFit = legend.fit.bind(legend);
+            legend.fit = function fit() {
+                originalFit();
+                this.height += gap;
+            };
+            legend._gapPatched = true;
+            chart.update('none');
+        }
+    };
+
+    function getBrandsShareSliceStyle(isLight) {
+        return {
+            borderWidth: 2,
+            borderColor: isLight ? '#ffffff' : '#1e293b',
+            borderRadius: 12,
+            spacing: 2,
+            hoverOffset: 8
+        };
+    }
+
+
+            // Функция эффекта печатной машинки
+            function typeWriter(text, elementId, speed = 15) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = ""; 
+            element.classList.add('typing'); 
+            
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    let char = text.charAt(i);
+                    
+                    // Если символ — это перенос строки, добавляем <br>, 
+                    // иначе добавляем сам символ
+                    if (char === "\n") {
+                        element.innerHTML += "<br>";
+                    } else {
+                        element.innerHTML += char;
+                    }
+                    
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    element.classList.remove('typing');
+                }
+            }
+            type();
+        }
+
+
+    // 3. Основная функция загрузки
+    async function loadData() {
+        const response = await fetch('data.json');
+        const data = await response.json();
+        const monthNames = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+
+        function formatPct(val) {
+            if (val === undefined || val === null) return "0.0%";
+            const sign = val > 0 ? '+' : '';
+            return sign + Number(val).toFixed(1) + '%';
+        }
+
+        function formatTooltipMonthYear(dateStr) {
+            const date = new Date(dateStr);
+            return monthNames[date.getMonth()] + ' ' + date.getFullYear();
+        }
+
+        function makeTooltipTitleCallback(dates) {
+            return function(tooltipItems) {
+                const idx = tooltipItems[0].dataIndex;
+                return formatTooltipMonthYear(dates[idx]);
+            };
+        }
+
+        const formattedLabels = data.charts.main_trend.dates.map(dateStr => {
+            const date = new Date(dateStr);
+            const month = date.getMonth(); 
+            return month === 0 ? date.getFullYear() : monthNames[month];
+        });
+
+        // Заполнение KPI
+        document.getElementById('kpi-avg').innerText = data.kpi.avg_monthly_interest + ' млн';
+        document.getElementById('kpi-yoy').innerText = formatPct(data.kpi.yoy_interest_growth);
+        document.getElementById('kpi-sales-yoy').innerText = formatPct(data.kpi.sales_yoy_growth);
+        document.getElementById('kpi-aggregator').innerText = formatPct(data.kpi.aggregator_yoy);
+
+// --- ЗАПОЛНЕНИЕ ВКЛАДКИ АГРЕГАТОРЫ ---
+        
+        // 1. KPI Агрегаторов
+        document.getElementById('kpi-agg-avg').innerText = data.kpi_agg.avg_monthly + ' млн';
+        document.getElementById('kpi-agg-share').innerText = data.kpi_agg.share + '%';
+        document.getElementById('kpi-agg-yoy-main').innerText = formatPct(data.kpi_agg.yoy);
+        document.getElementById('kpi-agg-leader').innerText = '🏆 ' + data.kpi_agg.leader;
+
+        const shares = data.charts_agg.top3_shares;
+        const shareYear = shares.year || 2026;
+        const shareLabel = document.querySelector('.top3-share-container .gauge-label');
+        if (shareLabel) shareLabel.textContent = 'Доли ТОП-3, ' + shareYear;
+
+        const shareValues = [shares.avito, shares.autoru, shares.drom];
+        const leaderShare = Math.max(...shareValues);
+
+// --- ЗАПОЛНЕНИЕ ВКЛАДКИ НОВЫЕ АВТО ---
+        if (data.kpi_new) {
+            document.getElementById('kpi-new-avg').innerText = data.kpi_new.avg_monthly + ' млн';
+            document.getElementById('kpi-new-share').innerText = data.kpi_new.share + '%';
+            document.getElementById('kpi-new-yoy').innerText = formatPct(data.kpi_new.yoy_interest);
+            document.getElementById('kpi-new-sales-yoy').innerText = formatPct(data.kpi_new.yoy_sales);
+        }
+
+        if (data.ai_insight_new) {
+            const newKey = 'seen-new-' + data.updated_at;
+            if (localStorage.getItem(newKey)) {
+                document.getElementById('ai-text-new').innerText = data.ai_insight_new;
+            } else {
+                typeWriter(data.ai_insight_new.trim(), 'ai-text-new', 15);
+                localStorage.setItem(newKey, 'true');
+            }
+        }
+
+        const newDates = data.charts_new?.main_trend?.dates || data.charts.main_trend.dates;
+        const newFormattedLabels = newDates.map(dateStr => {
+            const date = new Date(dateStr);
+            const month = date.getMonth();
+            return month === 0 ? date.getFullYear() : monthNames[month];
+        });
+
+// --- ЗАПОЛНЕНИЕ ВКЛАДКИ МАРКИ АВТО ---
+        const brandsYear = data.charts_brands?.country_shares
+            ? Math.max(...Object.keys(data.charts_brands.country_shares).map(Number))
+            : 2026;
+        if (data.kpi_brands) {
+            document.getElementById('kpi-brands-volume').innerText =
+                (data.kpi_brands.volume_leader_flag || '') + ' ' + data.kpi_brands.volume_leader;
+            document.getElementById('kpi-brands-growth').innerText =
+                (data.kpi_brands.growth_leader_flag || '') + ' ' + data.kpi_brands.growth_leader;
+            document.getElementById('kpi-brands-decline').innerText =
+                (data.kpi_brands.decline_leader_flag || '') + ' ' + data.kpi_brands.decline_leader;
+            document.getElementById('kpi-brands-top1').innerText = data.kpi_brands.top1_brand || '-';
+            document.getElementById('kpi-brands-volume-label').innerText =
+                'лидер по интересу в ' + brandsYear + ' году';
+            document.getElementById('kpi-brands-growth-label').innerText =
+                'лидер по росту интереса YTD';
+            document.getElementById('kpi-brands-decline-label').innerText =
+                'ТОП1 в падении интереса YTD';
+            document.getElementById('kpi-brands-top1-label').innerText =
+                'ТОП1 марка в ' + brandsYear + ' году';
+        }
+
+        if (data.ai_insight_brands) {
+            const brandsKey = 'seen-brands-' + data.updated_at;
+            if (localStorage.getItem(brandsKey)) {
+                document.getElementById('ai-text-brands').innerText = data.ai_insight_brands;
+            } else {
+                typeWriter(data.ai_insight_brands.trim(), 'ai-text-brands', 15);
+                localStorage.setItem(brandsKey, 'true');
+            }
+        }
+
+        const brandsDates = data.charts_brands?.dates || data.charts.main_trend.dates;
+        const brandsFormattedLabels = brandsDates.map(dateStr => {
+            const date = new Date(dateStr);
+            const month = date.getMonth();
+            return month === 0 ? date.getFullYear() : monthNames[month];
+        });
+
+// --- ЗАПОЛНЕНИЕ ВКЛАДКИ ПОДДЕРЖАННЫЕ АВТО ---
+        if (data.kpi_used) {
+            document.getElementById('kpi-used-avg').innerText = data.kpi_used.avg_monthly + ' млн';
+            document.getElementById('kpi-used-share').innerText = data.kpi_used.share + '%';
+            document.getElementById('kpi-used-yoy').innerText = formatPct(data.kpi_used.yoy_interest);
+            document.getElementById('kpi-used-sales-yoy').innerText = formatPct(data.kpi_used.yoy_sales);
+        }
+
+        if (data.ai_insight_used) {
+            const usedKey = 'seen-used-' + data.updated_at;
+            if (localStorage.getItem(usedKey)) {
+                document.getElementById('ai-text-used').innerText = data.ai_insight_used;
+            } else {
+                typeWriter(data.ai_insight_used.trim(), 'ai-text-used', 15);
+                localStorage.setItem(usedKey, 'true');
+            }
+        }
+
+        const usedDates = data.charts_used?.main_trend?.dates || data.charts.main_trend.dates;
+        const usedFormattedLabels = usedDates.map(dateStr => {
+            const date = new Date(dateStr);
+            const month = date.getMonth();
+            return month === 0 ? date.getFullYear() : monthNames[month];
+        });
+
+        if (data.ai_insight_agg) {
+            const aggKey = 'seen-agg-' + data.updated_at;
+            if (localStorage.getItem(aggKey)) {
+                document.getElementById('ai-text-agg').innerText = data.ai_insight_agg;
+            } else {
+                typeWriter(data.ai_insight_agg.trim(), 'ai-text-agg', 15);
+                localStorage.setItem(aggKey, 'true');
+            }
+        }
+
+
+        // --- УМНЫЙ ВЫВОД ИИ-СВОДКИ ---
+        if (data.ai_insight) {
+            // Создаем уникальный ключ для этого обновления (например, "seen-insight-2026-06-01")
+            const insightKey = 'seen-insight-' + (data.updated_at || 'default');
+            const hasBeenTyped = localStorage.getItem(insightKey);
+            const cleanText = data.ai_insight.trim();
+
+            if (hasBeenTyped) {
+                // Если уже видели эту сводку — выводим мгновенно
+                document.getElementById('ai-text').innerText = data.ai_insight;
+            } else {
+                // Если это новый месяц или кэш пуст — запускаем печать
+                typeWriter(data.ai_insight, 'ai-text', 15);
+                // Запоминаем, что эту сводку мы уже "напечатали"
+                localStorage.setItem(insightKey, 'true');
+            }
+        } else {
+            document.getElementById('ai-text').innerText = "Аналитика пока не готова.";
+        }
+
+        // Главный график
+        const ctxMain = document.getElementById('mainChart').getContext('2d');
+        window.mainChartInstance = new Chart(ctxMain, {
+            type: 'bar',
+            plugins: [seasonalityBackground], 
+            data: {
+                labels: formattedLabels,
+                datasets: [
+                    {
+                        label: 'Интерес',
+                        type: 'line',
+                        data: data.charts.main_trend.interest,
+                        borderColor: '#22d3ee',
+                        borderWidth: 3,
+                        pointStyle: 'circle',
+                        pointBackgroundColor: '#22d3ee',
+                        pointBorderColor: '#22d3ee', // Цвет обводки такой же как у заливки
+                        pointBorderWidth: 0.1,         // Минимальная обводка, чтобы не раздувать круг
+                        fill: false,
+                        tension: 0.4,
+                        yAxisID: 'yInterest',
+                        pointStyle: 'circle',           // Принудительно ставим форму круга
+                        pointBackgroundColor: '#22d3ee', // Цвет заливки точки в легенде (cyan)
+                        pointRadius: 0,                 // На самом графике точки остаются невидимыми
+                        pointHoverRadius: 5,            // При наведении точка появится
+                    },
+                    {
+                        label: 'Продажи',
+                        type: 'bar',
+                        pointStyle: 'rect', 
+                        pointBorderWidth: 1,
+                        data: data.charts.main_trend.sales,
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderRadius: 4,
+                        yAxisID: 'ySales',
+                        pointStyle: 'rect',
+                    },
+                    {
+                        label: 'Высокий сезон',
+                        data: [], 
+                        backgroundColor: 'rgba(249, 115, 22, 0.4)', // Ярче для легенды
+                        borderColor: 'rgba(249, 115, 22, 0.6)', 
+                        borderWidth: 1,
+                        pointStyle: 'rect', 
+                        yAxisID: 'yInterest',  
+                    }
+                ]
+            },
+            options: {
+                onLeave: (event, elements, chart) => {
+                chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                chart.update();
+                },
+                customSeasonality: data.charts.main_trend.seasonality, 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        display: true, position: 'top', align: 'center', maxWidth: 600,
+                        
+                        labels: { 
+                        color: '#94a3b8', 
+                        usePointStyle: true, 
+                        boxWidth: 10,       // Ширина области значка
+                        boxHeight: 8,      // ВАЖНО: Высота области (такая же как ширина)
+                        pointStyleWidth: 10, // Размер самой точки
+                        padding: 15,  //Отступ легенды от заголовка блока
+                        font: { size: 12, family: 'sans-serif' } 
+                    }
+
+                        //сюда можно встрвить стиль ручной натсройки легенд
+                        
+                    },
+                    tooltip: { 
+                    mode: 'index', 
+                    intersect: false, 
+                    backgroundColor: '#1e293b',
+                    titleColor: '#f8fafc', 
+                    bodyColor: '#f8fafc', 
+                    borderColor: '#334155', 
+                    borderWidth: 1,
+                    callbacks: {
+                        title: makeTooltipTitleCallback(data.charts.main_trend.dates),
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            let value = context.parsed.y;
+                            if (label.includes('Интерес')) {
+                                return ' ' + label + ': ' + (value / 1000000).toFixed(1) + ' млн';
+                            } else if (label.includes('Продажи')) {
+                                return ' ' + label + ': ' + (value / 1000).toFixed(1) + ' тыс';
+                            }
+                            return ' ' + label + ': ' + value;
+                        }
+                    }
+                }
+                },
+                scales: {
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } 
+                    },
+                    yInterest: { 
+                        type: 'linear', 
+                        position: 'left', 
+                        // --- ГАРАНТИРОВАННОЕ СКРЫТИЕ ОСИ ---
+                        display: function(context) {
+                            // Если первый график (индекс 0) скрыт — возвращаем false
+                            return context.chart.isDatasetVisible(0);
+                        },
+                        // -----------------------------------
+                        grid: { color: '#334155' }, 
+                        ticks: { 
+                            color: '#22d3ee', 
+                            callback: function(value) { return (value / 1000000).toFixed(0); } 
+                        }, 
+                        title: { 
+                            display: true, 
+                            text: 'Запросы в млн', 
+                            color: '#22d3ee', 
+                            font: { size: 12 } 
+                        } 
+                    },
+                    ySales: { 
+                        type: 'linear', 
+                        position: 'right', 
+                        // --- ГАРАНТИРОВАННОЕ СКРЫТИЕ ОСИ ---
+                        display: function(context) {
+                            // Если второй график (индекс 1) скрыт — возвращаем false
+                            return context.chart.isDatasetVisible(1);
+                        },
+                        // -----------------------------------
+                        grid: { display: false }, 
+                        ticks: { 
+                            color: '#3b82f6', 
+                            callback: function(value) { return value / 1000; } 
+                        }, 
+                        beginAtZero: true, 
+                        title: { 
+                            display: true, 
+                            text: 'Продажи в тыс.', 
+                            color: '#3b82f6', 
+                            font: { size: 12 } 
+                }
+            }
+            }
+        }
+        });
+        //Спидометр
+        const ctxGauge = document.getElementById('gaugeChart').getContext('2d');
+        const maxIndex = data.kpi.max_index * 1.1; // Динамический максимум + 10% запаса
+        const currentIndex = Math.min(data.kpi.current_index, maxIndex);
+        const remainder = Math.max(0, maxIndex - currentIndex);
+        window.gaugeChartInstance = new Chart(ctxGauge, {
+            type: 'doughnut',
+            plugins: [radialCenterText],
+            data: {
+                labels: ['Индекс', 'Остаток'],
+                datasets: [{
+                    data: [currentIndex, remainder],
+                    backgroundColor: ['#a855f7', 'rgba(255, 255, 255, 0.05)'],
+                    borderWidth: 0,
+                    borderRadius: 20,
+                    cutout: '70%' // Сделали кольцо толще
+                }]
+            },
+            options: {
+                progressValue: data.kpi.current_index,
+                maxScaleValue: maxIndex, // Передаем максимум в плагин
+                centerTextColor: document.body.classList.contains('light-theme') ? '#111827' : '#f8fafc', 
+                aspectRatio: 1, 
+                layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                maintainAspectRatio: true
+            }
+        });
+
+        // График Индекса (Линия)
+        const ctxIndex = document.getElementById('indexChart').getContext('2d');
+        window.indexChartInstance = new Chart(ctxIndex, {
+            type: 'line',
+            data: {
+                labels: formattedLabels,
+                datasets: [{
+                    label: 'Индекс',
+                    data: data.charts.activity_index.values,
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,           // Убираем точки
+                    pointHoverRadius: 5       // Оставляем только при наведении
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        right: 30 // <--- ОТСТУП СПРАВА В ПИКСЕЛЯХ (попробуй 20, 30 или 40)
+                    }
+                },
+                plugins: { 
+                    legend: { display: false }, 
+                    tooltip: { 
+                        mode: 'index', 
+                        intersect: false, 
+                        backgroundColor: '#1e293b',
+                        // --- ДОБАВИЛИ ПЕРЕСЧЕТ ДЛЯ ПОДСКАЗОК ---
+                        callbacks: {
+                        title: makeTooltipTitleCallback(data.charts.main_trend.dates),
+                        label: function(context) {
+                            const maxLimit = data.kpi.max_index * 1.1;
+                            const score = (context.parsed.y / maxLimit) * 10;
+                            return ' Индекс: ' + score.toFixed(1) + ' / 10'; // Вернули .toFixed(1), так как баллы стали меньше
+                        }
+                    }
+                        // ---------------------------------------
+                    } 
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } } },
+                    y: { display: false, grid: { display: false } }
+                }
+            }
+        });
+
+        const industrySalesMix = data.charts_used?.sales_mix || data.charts_new?.sales_mix;
+        if (industrySalesMix) {
+            const ctxIndustrySalesMix = document.getElementById('industrySalesMixChart').getContext('2d');
+            window.industrySalesMixChartInstance = new Chart(ctxIndustrySalesMix, {
+                type: 'bar',
+                data: {
+                    labels: formattedLabels,
+                    datasets: [
+                        {
+                            label: 'Поддержанные',
+                            data: industrySalesMix.used_sales,
+                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                            borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
+                            stack: 'mix'
+                        },
+                        {
+                            label: 'Новые',
+                            data: industrySalesMix.new_sales,
+                            backgroundColor: 'rgba(249, 115, 22, 0.85)',
+                            borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+                            stack: 'mix'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                boxHeight: 8,
+                                padding: 12,
+                                font: { size: 12, family: 'sans-serif' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(data.charts.main_trend.dates),
+                                label: function(context) {
+                                    const val = context.parsed.y;
+                                    const total = context.chart.data.datasets[0].data[context.dataIndex]
+                                        + context.chart.data.datasets[1].data[context.dataIndex];
+                                    const pct = total > 0 ? Math.round(val / total * 100) : 0;
+                                    return ' ' + context.dataset.label + ': ' + (val / 1000).toFixed(1) + ' тыс (' + pct + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) { return value / 1000; }
+                            },
+                            title: { display: true, text: 'Продажи в тыс.', color: '#94a3b8', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+           
+
+
+                // --- ЛОГИКА ВКЛАДОК ---
+                const tabElements = document.querySelectorAll('.tab');
+                        const viewElements = document.querySelectorAll('.view-section');
+
+                        tabElements.forEach(tab => {
+                            tab.addEventListener('click', () => {
+                                // Если у вкладки нет data-target, пока игнорируем (в разработке)
+                                const targetId = tab.getAttribute('data-target');
+                                if (!targetId) return;
+
+                                // Убираем класс active у всех вкладок
+                                tabElements.forEach(t => t.classList.remove('active'));
+                                // Скрываем все экраны
+                                viewElements.forEach(v => v.classList.remove('active-view'));
+
+                                // Делаем активной нажатую вкладку
+                                tab.classList.add('active');
+                                // Показываем нужный экран
+                                document.getElementById(targetId).classList.add('active-view');
+
+                                if (targetId === 'view-aggregators') {
+                                    if (!window.aggregatorsChartsInitialized) {
+                                        initAggregatorCharts();
+                                    } else {
+                                        requestAnimationFrame(() => {
+                                            resizeChartsWithoutAnimation(
+                                                window.aggMainChartInstance,
+                                                window.top3ChartInstance,
+                                                window.top3ShareChartInstance
+                                            );
+                                        });
+                                    }
+                                } else if (targetId === 'view-new') {
+                                    if (!window.newChartsInitialized) {
+                                        initNewCharts();
+                                    } else {
+                                        requestAnimationFrame(() => {
+                                            resizeChartsWithoutAnimation(
+                                                window.newMainChartInstance,
+                                                window.newSalesMixChartInstance,
+                                                window.newGaugeChartInstance,
+                                                window.newIndexChartInstance
+                                            );
+                                        });
+                                    }
+                                } else if (targetId === 'view-brands') {
+                                    if (!window.brandsChartsInitialized) {
+                                        initBrandsCharts();
+                                    } else {
+                                        requestAnimationFrame(() => {
+                                            resizeChartsWithoutAnimation(
+                                                window.brandsCountryChartInstance,
+                                                window.brandsTop10ChartInstance,
+                                                ...(window.brandsShareChartInstances || [])
+                                            );
+                                        });
+                                    }
+                                } else if (targetId === 'view-used') {
+                                    if (!window.usedChartsInitialized) {
+                                        initUsedCharts();
+                                    } else {
+                                        requestAnimationFrame(() => {
+                                            resizeChartsWithoutAnimation(
+                                                window.usedMainChartInstance,
+                                                window.usedSalesMixChartInstance,
+                                                window.usedGaugeChartInstance,
+                                                window.usedIndexChartInstance
+                                            );
+                                        });
+                                    }
+                                } else if (targetId === 'view-industry') {
+                                    requestAnimationFrame(() => {
+                                        resizeChartsWithoutAnimation(
+                                            window.mainChartInstance,
+                                            window.gaugeChartInstance,
+                                            window.indexChartInstance,
+                                            window.industrySalesMixChartInstance
+                                        );
+                                    });
+                                }
+                            });
+                        });
+
+        
+
+        // --- ЛОГИКА ТЕМЫ ---
+        const themeBtn = document.getElementById('theme-toggle');
+        const savedTheme = localStorage.getItem('user-theme') || 'dark';
+        const isInitiallyLight = (savedTheme === 'light');
+        
+        if (isInitiallyLight) {
+            document.body.classList.add('light-theme');
+            themeBtn.innerHTML = sunIcon; 
+        } else {
+            document.body.classList.remove('light-theme');
+            themeBtn.innerHTML = moonIcon; 
+        }
+
+        function updateChartsForTheme(isLight) {
+            const gridColor = isLight ? '#e2e8f0' : '#334155';
+            const textColor = isLight ? '#64748b' : '#94a3b8';
+
+            if (window.mainChartInstance) {
+                window.mainChartInstance.options.scales.x.ticks.color = textColor;
+                window.mainChartInstance.options.scales.yInterest.grid.color = gridColor;
+                window.mainChartInstance.options.scales.yInterest.ticks.color = isLight ? '#0891b2' : '#22d3ee';
+                window.mainChartInstance.options.scales.ySales.ticks.color = isLight ? '#2563eb' : '#3b82f6';
+                window.mainChartInstance.update();
+            }
+            if (window.indexChartInstance) {
+                window.indexChartInstance.options.scales.x.ticks.color = textColor;
+                window.indexChartInstance.update();
+            }
+            if (window.gaugeChartInstance) {
+                window.gaugeChartInstance.options.centerTextColor = isLight ? '#111827' : '#f8fafc';
+                window.gaugeChartInstance.data.datasets[0].backgroundColor[1] = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)';
+                window.gaugeChartInstance.update();
+            }
+            if (window.industrySalesMixChartInstance) {
+                window.industrySalesMixChartInstance.options.scales.x.ticks.color = textColor;
+                window.industrySalesMixChartInstance.options.scales.y.grid.color = gridColor;
+                window.industrySalesMixChartInstance.options.scales.y.ticks.color = textColor;
+                window.industrySalesMixChartInstance.options.plugins.legend.labels.color = textColor;
+                window.industrySalesMixChartInstance.update();
+            }
+            if (window.aggMainChartInstance) {
+                window.aggMainChartInstance.options.scales.x.ticks.color = textColor;
+                window.aggMainChartInstance.options.scales.yInterest.grid.color = gridColor;
+                window.aggMainChartInstance.options.plugins.legend.labels.color = textColor;
+                window.aggMainChartInstance.update();
+            }
+            if (window.top3ChartInstance) {
+                window.top3ChartInstance.options.scales.x.ticks.color = textColor;
+                window.top3ChartInstance.options.scales.y.grid.color = gridColor;
+                window.top3ChartInstance.options.plugins.legend.labels.color = textColor;
+                window.top3ChartInstance.update();
+            }
+            if (window.top3ShareChartInstance) {
+                window.top3ShareChartInstance.options.centerTextColor = isLight ? '#111827' : '#f8fafc';
+                window.top3ShareChartInstance.update();
+            }
+            if (window.newMainChartInstance) {
+                window.newMainChartInstance.options.scales.x.ticks.color = textColor;
+                window.newMainChartInstance.options.scales.yInterest.grid.color = gridColor;
+                window.newMainChartInstance.options.scales.yInterest.ticks.color = isLight ? '#0891b2' : '#22d3ee';
+                window.newMainChartInstance.options.scales.ySales.ticks.color = isLight ? '#2563eb' : '#3b82f6';
+                window.newMainChartInstance.options.plugins.legend.labels.color = textColor;
+                window.newMainChartInstance.update();
+            }
+            if (window.newSalesMixChartInstance) {
+                window.newSalesMixChartInstance.options.scales.x.ticks.color = textColor;
+                window.newSalesMixChartInstance.options.scales.y.grid.color = gridColor;
+                window.newSalesMixChartInstance.options.scales.y.ticks.color = textColor;
+                window.newSalesMixChartInstance.options.plugins.legend.labels.color = textColor;
+                window.newSalesMixChartInstance.update();
+            }
+            if (window.newGaugeChartInstance) {
+                window.newGaugeChartInstance.options.centerTextColor = isLight ? '#111827' : '#f8fafc';
+                window.newGaugeChartInstance.data.datasets[0].backgroundColor[1] = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)';
+                window.newGaugeChartInstance.update();
+            }
+            if (window.newIndexChartInstance) {
+                window.newIndexChartInstance.options.scales.x.ticks.color = textColor;
+                window.newIndexChartInstance.update();
+            }
+            if (window.usedMainChartInstance) {
+                window.usedMainChartInstance.options.scales.x.ticks.color = textColor;
+                window.usedMainChartInstance.options.scales.yInterest.grid.color = gridColor;
+                window.usedMainChartInstance.options.scales.yInterest.ticks.color = isLight ? '#0891b2' : '#22d3ee';
+                window.usedMainChartInstance.options.scales.ySales.ticks.color = isLight ? '#2563eb' : '#3b82f6';
+                window.usedMainChartInstance.options.plugins.legend.labels.color = textColor;
+                window.usedMainChartInstance.update();
+            }
+            if (window.usedSalesMixChartInstance) {
+                window.usedSalesMixChartInstance.options.scales.x.ticks.color = textColor;
+                window.usedSalesMixChartInstance.options.scales.y.grid.color = gridColor;
+                window.usedSalesMixChartInstance.options.scales.y.ticks.color = textColor;
+                window.usedSalesMixChartInstance.options.plugins.legend.labels.color = textColor;
+                window.usedSalesMixChartInstance.update();
+            }
+            if (window.usedGaugeChartInstance) {
+                window.usedGaugeChartInstance.options.centerTextColor = isLight ? '#111827' : '#f8fafc';
+                window.usedGaugeChartInstance.data.datasets[0].backgroundColor[1] = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)';
+                window.usedGaugeChartInstance.update();
+            }
+            if (window.usedIndexChartInstance) {
+                window.usedIndexChartInstance.options.scales.x.ticks.color = textColor;
+                window.usedIndexChartInstance.update();
+            }
+            if (window.brandsCountryChartInstance) {
+                window.brandsCountryChartInstance.options.scales.x.ticks.color = textColor;
+                window.brandsCountryChartInstance.options.scales.y.grid.color = gridColor;
+                window.brandsCountryChartInstance.options.scales.y.ticks.color = isLight ? '#0891b2' : '#22d3ee';
+                window.brandsCountryChartInstance.options.scales.y.title.color = isLight ? '#0891b2' : '#22d3ee';
+                window.brandsCountryChartInstance.update();
+            }
+            if (window.brandsTop10ChartInstance) {
+                window.brandsTop10ChartInstance.options.scales.x.ticks.color = textColor;
+                window.brandsTop10ChartInstance.options.scales.y.grid.color = gridColor;
+                window.brandsTop10ChartInstance.options.scales.y.ticks.color = isLight ? '#0891b2' : '#22d3ee';
+                window.brandsTop10ChartInstance.options.scales.y.title.color = isLight ? '#0891b2' : '#22d3ee';
+                window.brandsTop10ChartInstance.options.plugins.legend.labels.color = textColor;
+                window.brandsTop10ChartInstance.update();
+            }
+            if (window.brandsShareChartInstances) {
+                window.brandsShareChartInstances.forEach((chart) => {
+                    const sliceStyle = getBrandsShareSliceStyle(isLight);
+                    chart.options.centerTextColor = isLight ? '#111827' : '#f8fafc';
+                    Object.assign(chart.data.datasets[0], sliceStyle);
+                    chart.update();
+                });
+            }
+        }
+
+        // Применяем тему сразу при загрузке
+        updateChartsForTheme(isInitiallyLight);
+
+       // Обработчик клика (смена темы)
+       themeBtn.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('user-theme', isLight ? 'light' : 'dark');
+            themeBtn.innerHTML = isLight ? sunIcon : moonIcon;
+            updateChartsForTheme(isLight);
+        }); // <--- Лишнюю скобку отсюда мы убрали!
+
+        function resizeChartsWithoutAnimation(...charts) {
+            charts.forEach(chart => {
+                if (!chart) return;
+                chart.resize();
+                chart.update('none');
+            });
+        }
+
+        // === ГРАФИКИ АГРЕГАТОРОВ (создаются при первом открытии вкладки) ===
+        function initAggregatorCharts() {
+            if (window.aggregatorsChartsInitialized) return;
+        const ctxAggMain = document.getElementById('aggMainChart').getContext('2d');
+        window.aggMainChartInstance = new Chart(ctxAggMain, {
+            type: 'bar',
+            plugins: [seasonalityBackground], // Подключаем фон сезонности
+            data: {
+                labels: formattedLabels,
+                datasets: [
+                    {
+                        label: 'Интерес к агрегаторам',
+                        type: 'line',
+                        data: data.charts_agg.main_interest,
+                        borderColor: '#22d3ee',
+                        borderWidth: 3,
+                        pointStyle: 'circle', // Круглая точка в легенде
+                        pointBackgroundColor: '#22d3ee',
+                        pointBorderColor: '#22d3ee',
+                        pointBorderWidth: 0.1,
+                        fill: false,
+                        tension: 0.4,
+                        yAxisID: 'yInterest',
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    },
+                    {
+                        label: 'Продажи',
+                        type: 'bar',
+                        data: data.charts.main_trend.sales,
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderRadius: 4,
+                        pointStyle: 'rect', // Квадратная точка в легенде
+                        pointBorderWidth: 1,
+                        yAxisID: 'ySales'
+                    },
+                    {
+                        // Фейковый датасет для отображения "Высокого сезона" в легенде
+                        label: 'Высокий сезон',
+                        data: [], 
+                        backgroundColor: 'rgba(249, 115, 22, 0.4)',
+                        borderColor: 'rgba(249, 115, 22, 0.6)', 
+                        borderWidth: 1,
+                        pointStyle: 'rect', 
+                        yAxisID: 'yInterest'
+                    }
+                ]
+            },
+            options: {
+                customSeasonality: data.charts.main_trend.seasonality, // Данные для плагина сезонности
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 0 },
+                onLeave: (event, elements, chart) => {
+                    chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                    chart.update();
+                },
+                plugins: {
+                    legend: {
+                        display: true, 
+                        position: 'top', 
+                        align: 'center', 
+                        maxWidth: 600,
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true, // Включаем кастомные маркеры
+                            boxWidth: 10,        // Уменьшаем ширину маркера
+                            boxHeight: 8,        // Уменьшаем высоту маркера
+                            pointStyleWidth: 10,
+                            padding: 15,
+                            font: { size: 12, family: 'sans-serif' }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#f8fafc',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        callbacks: {
+                            title: makeTooltipTitleCallback(data.charts.main_trend.dates),
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                let value = context.parsed.y;
+                                if (label.includes('Интерес')) {
+                                    return ' ' + label + ': ' + (value / 1000000).toFixed(1) + ' млн';
+                                } else if (label.includes('Продажи')) {
+                                    return ' ' + label + ': ' + (value / 1000).toFixed(1) + ' тыс';
+                                }
+                                return ' ' + label + ': ' + value;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            color: '#94a3b8', 
+                            maxRotation: 0, // Делает подписи оси X строго горизонтальными
+                            minRotation: 0, 
+                            autoSkip: true, 
+                            maxTicksLimit: 12 
+                        }
+                    },
+                    yInterest: {
+                        type: 'linear',
+                        position: 'left',
+                        // --- Логика скрытия оси, если выключен график ---
+                        display: function(context) {
+                            return context.chart.isDatasetVisible(0);
+                        },
+                        grid: { color: '#334155' },
+                        ticks: {
+                            color: '#22d3ee',
+                            callback: function(value) { return (value / 1000000).toFixed(0); }
+                        },
+                        title: {
+                            display: true, // Включаем подпись оси
+                            text: 'Запросы в млн',
+                            color: '#22d3ee',
+                            font: { size: 12 }
+                        }
+                    },
+                    ySales: {
+                        type: 'linear',
+                        position: 'right',
+                        // --- Логика скрытия оси, если выключен график ---
+                        display: function(context) {
+                            return context.chart.isDatasetVisible(1);
+                        },
+                        grid: { display: false },
+                        ticks: {
+                            color: '#3b82f6',
+                            callback: function(value) { return value / 1000; }
+                        },
+                        beginAtZero: true,
+                        title: {
+                            display: true, // Включаем подпись оси
+                            text: 'Продажи в тыс.',
+                            color: '#3b82f6',
+                            font: { size: 12 }
+                        }
+                    }
+                }
+            }
+        });
+
+
+        // 5. Круговая диаграмма долей ТОП-3 (в стиле gauge на вкладке Индустрия)
+        const ctxTop3Share = document.getElementById('top3ShareChart').getContext('2d');
+        window.top3ShareChartInstance = new Chart(ctxTop3Share, {
+            type: 'doughnut',
+            plugins: [top3ShareCenterText],
+            data: {
+                labels: ['Авито Авто', 'Авто.ру', 'Дром'],
+                datasets: [{
+                    data: shareValues,
+                    backgroundColor: ['#a855f7', '#ef4444', '#38bdf8'],
+                    borderWidth: 0,
+                    borderRadius: 20
+                }]
+            },
+            options: {
+                leaderShare: leaderShare,
+                centerTextColor: document.body.classList.contains('light-theme') ? '#111827' : '#f8fafc',
+                aspectRatio: 1,
+                cutout: '70%',
+                animation: { duration: 0 },
+                layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#f8fafc',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.label + ': ' + context.parsed + '%';
+                            }
+                        }
+                    }
+                },
+                maintainAspectRatio: true
+            }
+        });
+
+        // 6. График сравнения ТОП-3 (Авито, Автору, Дром)
+        const ctxTop3 = document.getElementById('top3Chart').getContext('2d');
+        window.top3ChartInstance = new Chart(ctxTop3, {
+            type: 'line',
+            data: {
+                labels: formattedLabels,
+                datasets: [
+                    {
+                        label: 'Авито Авто',
+                        data: data.charts_agg.top3_avito,
+                        borderColor: '#a855f7', 
+                        backgroundColor: '#a855f7', // Добавили для легенды
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5, // Чтобы точка появлялась при наведении
+                        tension: 0.4,
+                        pointStyle: 'circle'
+                    },
+                    {
+                        label: 'Авто.ру',
+                        data: data.charts_agg.top3_autoru,
+                        borderColor: '#ef4444', 
+                        backgroundColor: '#ef4444', // Добавили для легенды
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        tension: 0.4,
+                        pointStyle: 'circle'
+                    },
+                    {
+                        label: 'Дром',
+                        data: data.charts_agg.top3_drom,
+                        borderColor: '#38bdf8', 
+                        backgroundColor: '#38bdf8', // Добавили для легенды
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        tension: 0.4,
+                        pointStyle: 'circle'
+                    }
+                ]
+            },
+            options: {
+                animation: { duration: 0 },
+                // --- ДОБАВЛЯЕМ ОТСТУП СПРАВА ---
+                layout: {
+                    padding: {
+                        right: 30 // Задаем отступ справа (попробуйте 20, 30 или 40, чтобы подобрать идеальный)
+                    }
+                },
+                // -------------------------------
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    // --- ВКЛЮЧАЕМ И НАСТРАИВАЕМ ЛЕГЕНДУ ---
+                    legend: { 
+                        display: true, 
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 8,
+                            font: { size: 12, family: 'sans-serif' },
+                            padding: 8 // <--- Уменьшает расстояние от легенды до графика (по умолчанию там 10-15)
+                        }
+                    },
+                   // --- ОБНОВЛЯЕМ ПОДСКАЗКИ ПРИ НАВЕДЕНИИ ---
+                   tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#f8fafc',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        callbacks: {
+                            title: makeTooltipTitleCallback(data.charts.main_trend.dates),
+                            label: function(context) {
+                                // ТУТ ИСПРАВИЛИ: .toFixed(1) заменили на .toFixed(0)
+                                return ' ' + context.dataset.label + ': ' + (context.parsed.y / 1000000).toFixed(0) + ' млн';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        grid: { 
+                            display: false // Скрываем вертикальную сетку (как на графике выше)
+                        }, 
+                        ticks: { 
+                            color: '#94a3b8', // 1. ЦВЕТ ШРИФТА ОСИ X (ДАТЫ). Сейчас стоит стандартный серый.
+                            maxRotation: 0, 
+                            minRotation: 0,
+                            autoSkip: true, 
+                            maxTicksLimit: 8 
+                        } 
+                    },
+                    y: { 
+                        grid: { 
+                            color: '#334155' // 2. ЦВЕТ СЕТКИ НА ЗАДНЕМ ФОНЕ (Горизонтальные линии). 
+                        }, 
+                        ticks: { 
+                            color: '#22d3ee', // 3. ЦВЕТ ЧИСЕЛ ОСИ Y. Сделал циановым (#22d3ee), как у линии "Интерес" на графике выше. (Если нужен серый - верните '#94a3b8')
+                            callback: v => (v / 1000000).toFixed(0) 
+                        },
+                        title: {
+                            display: true,
+                            text: 'Запросы в млн',
+                            color: '#22d3ee', // 4. ЦВЕТ ПОДПИСИ ОСИ Y. Тоже циановый для совпадения.
+                            font: { size: 12 }
+                        }
+                    }
+                }
+            }
+        });
+
+            window.aggregatorsChartsInitialized = true;
+        }
+
+        // === ГРАФИКИ НОВЫХ АВТО (создаются при первом открытии вкладки) ===
+        function initNewCharts() {
+            if (window.newChartsInitialized || !data.charts_new) return;
+
+            const newSeasonalityPlugin = {
+                id: 'newSeasonalityBackground',
+                beforeDraw: (chart) => {
+                    const { ctx, chartArea, scales: { x } } = chart;
+                    const seasonality = chart.config.options.customSeasonality;
+                    if (!seasonality) return;
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(249, 115, 22, 0.12)';
+                    seasonality.forEach((isHigh, index) => {
+                        if (isHigh) {
+                            const barWidth = chartArea.width / seasonality.length;
+                            const left = x.getPixelForValue(index) - (barWidth / 2);
+                            ctx.fillRect(left, chartArea.top, barWidth, chartArea.height);
+                        }
+                    });
+                    ctx.restore();
+                }
+            };
+
+            const ctxNewMain = document.getElementById('newMainChart').getContext('2d');
+            window.newMainChartInstance = new Chart(ctxNewMain, {
+                type: 'bar',
+                plugins: [newSeasonalityPlugin],
+                data: {
+                    labels: newFormattedLabels,
+                    datasets: [
+                        {
+                            label: 'Интерес',
+                            type: 'line',
+                            data: data.charts_new.main_trend.interest,
+                            borderColor: '#22d3ee',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#22d3ee',
+                            pointBorderColor: '#22d3ee',
+                            pointBorderWidth: 0.1,
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: 'yInterest',
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointStyle: 'circle'
+                        },
+                        {
+                            label: 'Продажи',
+                            type: 'bar',
+                            data: data.charts_new.main_trend.sales,
+                            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                            borderRadius: 4,
+                            yAxisID: 'ySales',
+                            pointStyle: 'rect'
+                        },
+                        {
+                            label: 'Высокий сезон',
+                            data: [],
+                            backgroundColor: 'rgba(249, 115, 22, 0.4)',
+                            borderColor: 'rgba(249, 115, 22, 0.6)',
+                            borderWidth: 1,
+                            pointStyle: 'rect',
+                            yAxisID: 'yInterest'
+                        }
+                    ]
+                },
+                options: {
+                    customSeasonality: data.charts_new.main_trend.seasonality,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                boxHeight: 8,
+                                padding: 15,
+                                font: { size: 12, family: 'sans-serif' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(newDates),
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.parsed.y;
+                                    if (label.includes('Интерес')) {
+                                        return ' ' + label + ': ' + (value / 1000000).toFixed(1) + ' млн';
+                                    } else if (label.includes('Продажи')) {
+                                        return ' ' + label + ': ' + (value / 1000).toFixed(1) + ' тыс';
+                                    }
+                                    return ' ' + label + ': ' + value;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        yInterest: {
+                            type: 'linear',
+                            position: 'left',
+                            display: function(context) { return context.chart.isDatasetVisible(0); },
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#22d3ee',
+                                callback: function(value) { return (value / 1000000).toFixed(0); }
+                            },
+                            title: { display: true, text: 'Запросы в млн', color: '#22d3ee', font: { size: 12 } }
+                        },
+                        ySales: {
+                            type: 'linear',
+                            position: 'right',
+                            display: function(context) { return context.chart.isDatasetVisible(1); },
+                            grid: { display: false },
+                            ticks: {
+                                color: '#3b82f6',
+                                callback: function(value) { return value / 1000; }
+                            },
+                            beginAtZero: true,
+                            title: { display: true, text: 'Продажи в тыс.', color: '#3b82f6', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            const salesMix = data.charts_used?.sales_mix || data.charts_new?.sales_mix;
+            const ctxNewSalesMix = document.getElementById('newSalesMixChart').getContext('2d');
+            window.newSalesMixChartInstance = new Chart(ctxNewSalesMix, {
+                type: 'bar',
+                data: {
+                    labels: newFormattedLabels,
+                    datasets: [
+                        {
+                            label: 'Поддержанные',
+                            data: salesMix.used_sales,
+                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                            borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
+                            stack: 'mix'
+                        },
+                        {
+                            label: 'Новые',
+                            data: salesMix.new_sales,
+                            backgroundColor: 'rgba(249, 115, 22, 0.85)',
+                            borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+                            stack: 'mix'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                boxHeight: 8,
+                                padding: 12,
+                                font: { size: 12, family: 'sans-serif' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(newDates),
+                                label: function(context) {
+                                    const val = context.parsed.y;
+                                    const total = context.chart.data.datasets[0].data[context.dataIndex]
+                                        + context.chart.data.datasets[1].data[context.dataIndex];
+                                    const pct = total > 0 ? Math.round(val / total * 100) : 0;
+                                    return ' ' + context.dataset.label + ': ' + (val / 1000).toFixed(1) + ' тыс (' + pct + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) { return value / 1000; }
+                            },
+                            title: { display: true, text: 'Продажи в тыс.', color: '#94a3b8', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            const newMaxIndex = data.kpi_new.max_index * 1.1;
+            const newCurrentIndex = Math.min(data.kpi_new.current_index, newMaxIndex);
+            const newRemainder = Math.max(0, newMaxIndex - newCurrentIndex);
+
+            const ctxNewGauge = document.getElementById('newGaugeChart').getContext('2d');
+            window.newGaugeChartInstance = new Chart(ctxNewGauge, {
+                type: 'doughnut',
+                plugins: [radialCenterText],
+                data: {
+                    labels: ['Индекс', 'Остаток'],
+                    datasets: [{
+                        data: [newCurrentIndex, newRemainder],
+                        backgroundColor: ['#a855f7', 'rgba(255, 255, 255, 0.05)'],
+                        borderWidth: 0,
+                        borderRadius: 20
+                    }]
+                },
+                options: {
+                    progressValue: data.kpi_new.current_index,
+                    maxScaleValue: newMaxIndex,
+                    centerTextColor: document.body.classList.contains('light-theme') ? '#111827' : '#f8fafc',
+                    aspectRatio: 1,
+                    cutout: '70%',
+                    animation: { duration: 0 },
+                    layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    maintainAspectRatio: true
+                }
+            });
+
+            const ctxNewIndex = document.getElementById('newIndexChart').getContext('2d');
+            window.newIndexChartInstance = new Chart(ctxNewIndex, {
+                type: 'line',
+                data: {
+                    labels: newFormattedLabels,
+                    datasets: [{
+                        label: 'Индекс',
+                        data: data.charts_new.activity_index.values,
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    layout: { padding: { right: 30 } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            callbacks: {
+                                title: makeTooltipTitleCallback(newDates),
+                                label: function(context) {
+                                    const maxLimit = data.kpi_new.max_index * 1.1;
+                                    const score = (context.parsed.y / maxLimit) * 10;
+                                    return ' Индекс: ' + score.toFixed(1) + ' / 10';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } } },
+                        y: { display: false, grid: { display: false } }
+                    }
+                }
+            });
+
+            window.newChartsInitialized = true;
+            updateChartsForTheme(document.body.classList.contains('light-theme'));
+        }
+
+        // === ГРАФИКИ ПОДДЕРЖАННЫХ АВТО (создаются при первом открытии вкладки) ===
+        function initUsedCharts() {
+            if (window.usedChartsInitialized || !data.charts_used) return;
+
+            const usedSeasonalityPlugin = {
+                id: 'usedSeasonalityBackground',
+                beforeDraw: (chart) => {
+                    const { ctx, chartArea, scales: { x } } = chart;
+                    const seasonality = chart.config.options.customSeasonality;
+                    if (!seasonality) return;
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(249, 115, 22, 0.12)';
+                    seasonality.forEach((isHigh, index) => {
+                        if (isHigh) {
+                            const barWidth = chartArea.width / seasonality.length;
+                            const left = x.getPixelForValue(index) - (barWidth / 2);
+                            ctx.fillRect(left, chartArea.top, barWidth, chartArea.height);
+                        }
+                    });
+                    ctx.restore();
+                }
+            };
+
+            const ctxUsedMain = document.getElementById('usedMainChart').getContext('2d');
+            window.usedMainChartInstance = new Chart(ctxUsedMain, {
+                type: 'bar',
+                plugins: [usedSeasonalityPlugin],
+                data: {
+                    labels: usedFormattedLabels,
+                    datasets: [
+                        {
+                            label: 'Интерес',
+                            type: 'line',
+                            data: data.charts_used.main_trend.interest,
+                            borderColor: '#22d3ee',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#22d3ee',
+                            pointBorderColor: '#22d3ee',
+                            pointBorderWidth: 0.1,
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: 'yInterest',
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointStyle: 'circle'
+                        },
+                        {
+                            label: 'Продажи',
+                            type: 'bar',
+                            data: data.charts_used.main_trend.sales,
+                            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                            borderRadius: 4,
+                            yAxisID: 'ySales',
+                            pointStyle: 'rect'
+                        },
+                        {
+                            label: 'Высокий сезон',
+                            data: [],
+                            backgroundColor: 'rgba(249, 115, 22, 0.4)',
+                            borderColor: 'rgba(249, 115, 22, 0.6)',
+                            borderWidth: 1,
+                            pointStyle: 'rect',
+                            yAxisID: 'yInterest'
+                        }
+                    ]
+                },
+                options: {
+                    customSeasonality: data.charts_used.main_trend.seasonality,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                boxHeight: 8,
+                                padding: 15,
+                                font: { size: 12, family: 'sans-serif' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(usedDates),
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.parsed.y;
+                                    if (label.includes('Интерес')) {
+                                        return ' ' + label + ': ' + (value / 1000000).toFixed(1) + ' млн';
+                                    } else if (label.includes('Продажи')) {
+                                        return ' ' + label + ': ' + (value / 1000).toFixed(1) + ' тыс';
+                                    }
+                                    return ' ' + label + ': ' + value;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        yInterest: {
+                            type: 'linear',
+                            position: 'left',
+                            display: function(context) { return context.chart.isDatasetVisible(0); },
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#22d3ee',
+                                callback: function(value) { return (value / 1000000).toFixed(0); }
+                            },
+                            title: { display: true, text: 'Запросы в млн', color: '#22d3ee', font: { size: 12 } }
+                        },
+                        ySales: {
+                            type: 'linear',
+                            position: 'right',
+                            display: function(context) { return context.chart.isDatasetVisible(1); },
+                            grid: { display: false },
+                            ticks: {
+                                color: '#3b82f6',
+                                callback: function(value) { return value / 1000; }
+                            },
+                            beginAtZero: true,
+                            title: { display: true, text: 'Продажи в тыс.', color: '#3b82f6', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            const ctxSalesMix = document.getElementById('usedSalesMixChart').getContext('2d');
+            window.usedSalesMixChartInstance = new Chart(ctxSalesMix, {
+                type: 'bar',
+                data: {
+                    labels: usedFormattedLabels,
+                    datasets: [
+                        {
+                            label: 'Поддержанные',
+                            data: data.charts_used.sales_mix.used_sales,
+                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                            borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
+                            stack: 'mix'
+                        },
+                        {
+                            label: 'Новые',
+                            data: data.charts_used.sales_mix.new_sales,
+                            backgroundColor: 'rgba(249, 115, 22, 0.85)',
+                            borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+                            stack: 'mix'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                boxHeight: 8,
+                                padding: 12,
+                                font: { size: 12, family: 'sans-serif' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(usedDates),
+                                label: function(context) {
+                                    const val = context.parsed.y;
+                                    const total = context.chart.data.datasets[0].data[context.dataIndex]
+                                        + context.chart.data.datasets[1].data[context.dataIndex];
+                                    const pct = total > 0 ? Math.round(val / total * 100) : 0;
+                                    return ' ' + context.dataset.label + ': ' + (val / 1000).toFixed(1) + ' тыс (' + pct + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) { return value / 1000; }
+                            },
+                            title: { display: true, text: 'Продажи в тыс.', color: '#94a3b8', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            const usedMaxIndex = data.kpi_used.max_index * 1.1;
+            const usedCurrentIndex = Math.min(data.kpi_used.current_index, usedMaxIndex);
+            const usedRemainder = Math.max(0, usedMaxIndex - usedCurrentIndex);
+
+            const ctxUsedGauge = document.getElementById('usedGaugeChart').getContext('2d');
+            window.usedGaugeChartInstance = new Chart(ctxUsedGauge, {
+                type: 'doughnut',
+                plugins: [radialCenterText],
+                data: {
+                    labels: ['Индекс', 'Остаток'],
+                    datasets: [{
+                        data: [usedCurrentIndex, usedRemainder],
+                        backgroundColor: ['#a855f7', 'rgba(255, 255, 255, 0.05)'],
+                        borderWidth: 0,
+                        borderRadius: 20
+                    }]
+                },
+                options: {
+                    progressValue: data.kpi_used.current_index,
+                    maxScaleValue: usedMaxIndex,
+                    centerTextColor: document.body.classList.contains('light-theme') ? '#111827' : '#f8fafc',
+                    aspectRatio: 1,
+                    cutout: '70%',
+                    animation: { duration: 0 },
+                    layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    maintainAspectRatio: true
+                }
+            });
+
+            const ctxUsedIndex = document.getElementById('usedIndexChart').getContext('2d');
+            window.usedIndexChartInstance = new Chart(ctxUsedIndex, {
+                type: 'line',
+                data: {
+                    labels: usedFormattedLabels,
+                    datasets: [{
+                        label: 'Индекс',
+                        data: data.charts_used.activity_index.values,
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    layout: { padding: { right: 30 } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            callbacks: {
+                                title: makeTooltipTitleCallback(usedDates),
+                                label: function(context) {
+                                    const maxLimit = data.kpi_used.max_index * 1.1;
+                                    const score = (context.parsed.y / maxLimit) * 10;
+                                    return ' Индекс: ' + score.toFixed(1) + ' / 10';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } } },
+                        y: { display: false, grid: { display: false } }
+                    }
+                }
+            });
+
+            window.usedChartsInitialized = true;
+            updateChartsForTheme(document.body.classList.contains('light-theme'));
+        }
+
+        // === ГРАФИКИ МАРОК АВТО (создаются при первом открытии вкладки) ===
+        function initBrandsCharts() {
+            if (window.brandsChartsInitialized || !data.charts_brands) return;
+
+            const cb = data.charts_brands;
+            const countryOrder = cb.country_order;
+            const countryColors = cb.country_colors;
+            const shareYears = Object.keys(cb.country_shares).sort();
+            const countryVisibility = {};
+            countryOrder.forEach(c => { countryVisibility[c] = true; });
+
+            const top10Palette = [
+                '#a855f7', '#ec4899', '#38bdf8', '#22d3ee', '#f97316',
+                '#eab308', '#14b8a6', '#ef4444', '#84cc16', '#6366f1'
+            ];
+
+            function getVisibleCountryShares(yearShares) {
+                const visibleCountries = countryOrder.filter(c => countryVisibility[c]);
+                const rawValues = visibleCountries.map(c => yearShares[c] || 0);
+                const total = rawValues.reduce((sum, v) => sum + v, 0);
+                const values = rawValues.map(v => total > 0 ? Math.round((v / total) * 100) : 0);
+                const diff = 100 - values.reduce((sum, v) => sum + v, 0);
+                if (values.length > 0 && diff !== 0) {
+                    const maxIdx = values.indexOf(Math.max(...values));
+                    values[maxIdx] += diff;
+                }
+                return { visibleCountries, values };
+            }
+
+            function updateBrandsCountryViews() {
+                if (window.brandsCountryChartInstance) {
+                    window.brandsCountryChartInstance.data.datasets.forEach((dataset) => {
+                        dataset.hidden = !countryVisibility[dataset.label];
+                    });
+                    window.brandsCountryChartInstance.update('none');
+                }
+                window.brandsShareChartInstances.forEach((chart, idx) => {
+                    const year = shareYears[idx];
+                    const { visibleCountries, values } = getVisibleCountryShares(cb.country_shares[year]);
+                    const sliceStyle = getBrandsShareSliceStyle(document.body.classList.contains('light-theme'));
+                    chart.data.labels = visibleCountries;
+                    chart.data.datasets[0].data = values;
+                    chart.data.datasets[0].backgroundColor = visibleCountries.map(c => countryColors[c]);
+                    Object.assign(chart.data.datasets[0], sliceStyle);
+                    chart.update('none');
+                });
+                document.querySelectorAll('.brands-legend-item').forEach((btn) => {
+                    const country = btn.dataset.country;
+                    btn.classList.toggle('is-hidden', !countryVisibility[country]);
+                });
+            }
+
+            const countryLegendLabel = (country) => (country === 'Южная Корея' ? 'Корея' : country);
+
+            function brandsShareExternalTooltip(context) {
+                const { chart, tooltip } = context;
+                let tooltipEl = document.getElementById('brands-share-tooltip-global');
+
+                if (!tooltipEl) {
+                    tooltipEl = document.createElement('div');
+                    tooltipEl.id = 'brands-share-tooltip-global';
+                    tooltipEl.className = 'brands-share-tooltip';
+                    document.body.appendChild(tooltipEl);
+                }
+
+                if (!tooltip || tooltip.opacity === 0) {
+                    tooltipEl.style.opacity = '0';
+                    return;
+                }
+
+                const title = tooltip.title && tooltip.title.length
+                    ? countryLegendLabel(tooltip.title[0])
+                    : '';
+                const body = tooltip.body && tooltip.body.length
+                    ? tooltip.body[0].lines[0]
+                    : '';
+
+                tooltipEl.innerHTML =
+                    (title ? '<div class="brands-share-tooltip-title">' + title + '</div>' : '') +
+                    '<div class="brands-share-tooltip-body">' + body + '</div>';
+
+                tooltipEl.style.opacity = '0';
+                tooltipEl.style.left = '0px';
+                tooltipEl.style.top = '0px';
+
+                const canvasRect = chart.canvas.getBoundingClientRect();
+                const tipWidth = tooltipEl.offsetWidth;
+                const tipHeight = tooltipEl.offsetHeight;
+                const pad = 8;
+
+                let left = canvasRect.left + tooltip.caretX;
+                let top = canvasRect.top + tooltip.caretY - 10;
+
+                left = Math.min(
+                    Math.max(left, pad + tipWidth / 2),
+                    window.innerWidth - pad - tipWidth / 2
+                );
+                top = Math.max(pad + tipHeight, top);
+
+                tooltipEl.style.left = left + 'px';
+                tooltipEl.style.top = top + 'px';
+                tooltipEl.style.transform = 'translate(-50%, -100%)';
+                tooltipEl.style.opacity = '1';
+            }
+
+            const legendEl = document.getElementById('brands-country-legend');
+            legendEl.innerHTML = '';
+            countryOrder.forEach((country) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'brands-legend-item';
+                btn.dataset.country = country;
+                btn.innerHTML =
+                    '<span class="brands-legend-dot" style="border-color:' + countryColors[country] + ';background:' + countryColors[country] + '33"></span>' +
+                    '<span>' + countryLegendLabel(country) + '</span>';
+                btn.addEventListener('click', () => {
+                    countryVisibility[country] = !countryVisibility[country];
+                    updateBrandsCountryViews();
+                });
+                legendEl.appendChild(btn);
+            });
+
+            const shareCanvasIds = ['brandsShare2023', 'brandsShare2024', 'brandsShare2025', 'brandsShare2026'];
+            window.brandsShareChartInstances = shareYears.map((year, idx) => {
+                const canvasId = shareCanvasIds[idx] || ('brandsShare' + year);
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                const { visibleCountries, values } = getVisibleCountryShares(cb.country_shares[year]);
+                const isLightTheme = document.body.classList.contains('light-theme');
+                const sliceStyle = getBrandsShareSliceStyle(isLightTheme);
+                return new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    plugins: [brandsShareCenterText],
+                    data: {
+                        labels: visibleCountries,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: visibleCountries.map(c => countryColors[c]),
+                            ...sliceStyle
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1,
+                        animation: {
+                            animateRotate: false,
+                            animateScale: false,
+                            duration: 280
+                        },
+                        centerLabel: year,
+                        centerTextColor: isLightTheme ? '#111827' : '#f8fafc',
+                        cutout: '62%',
+                        layout: { padding: 12 },
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: true
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: false,
+                                external: brandsShareExternalTooltip,
+                                callbacks: {
+                                    title: function(items) {
+                                        return countryLegendLabel(items[0].label);
+                                    },
+                                    label: function(context) {
+                                        return countryLegendLabel(context.label) + ': ' + context.parsed + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }).filter(Boolean);
+
+            const ctxCountry = document.getElementById('brandsCountryChart').getContext('2d');
+            window.brandsCountryChartInstance = new Chart(ctxCountry, {
+                type: 'line',
+                data: {
+                    labels: brandsFormattedLabels,
+                    datasets: countryOrder.map((country) => ({
+                        label: country,
+                        data: cb.country_trends[country],
+                        borderColor: countryColors[country],
+                        backgroundColor: countryColors[country] + '33',
+                        fill: false,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        borderWidth: 2
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(brandsDates),
+                                label: function(context) {
+                                    if (context.parsed.y === null || context.dataset.hidden) return null;
+                                    const countryLabel = countryLegendLabel(context.dataset.label);
+                                    return ' ' + countryLabel + ': ' + (context.parsed.y / 1000000).toFixed(1) + ' млн';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#22d3ee',
+                                callback: function(value) { return (value / 1000000).toFixed(1); }
+                            },
+                            title: { display: true, text: 'Запросы в млн', color: '#22d3ee', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            const top10Brands = cb.top10.brands;
+            const ctxTop10 = document.getElementById('brandsTop10Chart').getContext('2d');
+            window.brandsTop10ChartInstance = new Chart(ctxTop10, {
+                type: 'line',
+                plugins: [legendBottomGap],
+                data: {
+                    labels: brandsFormattedLabels,
+                    datasets: top10Brands.map((brand, idx) => ({
+                        label: brand,
+                        data: cb.top10.series[brand],
+                        borderColor: top10Palette[idx % top10Palette.length],
+                        backgroundColor: top10Palette[idx % top10Palette.length] + '33',
+                        fill: false,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        borderWidth: 2
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legendBottomGap: { gap: 18 },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                boxHeight: 8,
+                                padding: 10,
+                                font: { size: 11, family: 'sans-serif' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: makeTooltipTitleCallback(brandsDates),
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': ' + (context.parsed.y / 1000000).toFixed(2) + ' млн';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: '#334155' },
+                            ticks: {
+                                color: '#22d3ee',
+                                callback: function(value) { return (value / 1000000).toFixed(1); }
+                            },
+                            title: { display: true, text: 'Запросы в млн', color: '#22d3ee', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            window.brandsChartsInitialized = true;
+            updateChartsForTheme(document.body.classList.contains('light-theme'));
+        }
+
+    } // <--- ПРАВИЛЬНО: Теперь функция loadData() закрывается здесь, включая в себя ВСЕ графики!
+
+    (function initTabsDragScroll() {
+        const tabs = document.querySelector('.tabs');
+        if (!tabs) return;
+
+        let isDragging = false;
+        let startX = 0;
+        let scrollStart = 0;
+        let dragMoved = false;
+
+        tabs.addEventListener('mousedown', (event) => {
+            isDragging = true;
+            dragMoved = false;
+            startX = event.pageX;
+            scrollStart = tabs.scrollLeft;
+            tabs.classList.add('is-dragging');
+        });
+
+        tabs.addEventListener('mousemove', (event) => {
+            if (!isDragging) return;
+            const delta = event.pageX - startX;
+            if (Math.abs(delta) > 3) dragMoved = true;
+            tabs.scrollLeft = scrollStart - delta;
+        });
+
+        const stopDragging = () => {
+            isDragging = false;
+            tabs.classList.remove('is-dragging');
+        };
+
+        tabs.addEventListener('mouseup', stopDragging);
+        tabs.addEventListener('mouseleave', stopDragging);
+
+        tabs.querySelectorAll('.tab').forEach((tab) => {
+            tab.addEventListener('click', (event) => {
+                if (dragMoved) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
+        });
+    })();
+
+    (function initMobileChartResize() {
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                [
+                    window.mainChartInstance,
+                    window.gaugeChartInstance,
+                    window.indexChartInstance,
+                    window.industrySalesMixChartInstance,
+                    window.newMainChartInstance,
+                    window.newSalesMixChartInstance,
+                    window.newGaugeChartInstance,
+                    window.newIndexChartInstance,
+                    window.usedMainChartInstance,
+                    window.usedSalesMixChartInstance,
+                    window.usedGaugeChartInstance,
+                    window.usedIndexChartInstance,
+                    window.aggMainChartInstance,
+                    window.top3ChartInstance,
+                    window.top3ShareChartInstance,
+                    window.brandsCountryChartInstance,
+                    window.brandsTop10ChartInstance,
+                    ...(window.brandsShareChartInstances || [])
+                ].forEach((chart) => {
+                    if (!chart) return;
+                    chart.resize();
+                    chart.update('none');
+                });
+            }, 150);
+        });
+    })();
+
+    loadData();
+</script>
+
+</body>
+</html>
