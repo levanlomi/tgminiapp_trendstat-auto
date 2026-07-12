@@ -536,8 +536,8 @@ output = {
     "ai_insight_brands": ai_text_brands
 }
 
-for json_path in ('data.json', '../frontend/data.json'):
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+# Сохраняем файл один раз в корневую папку
+with open('data.json', 'w', encoding='utf-8') as f:
+    json.dump(output, f, ensure_ascii=False, indent=2)
 
 print("✅ JSON успешно обновлен! (Индустрия, агрегаторы, поддержанные авто, новые авто, марки авто)")

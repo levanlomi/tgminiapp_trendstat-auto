@@ -2,7 +2,7 @@ name: Update TrendStat Data
 
 on:
   schedule:
-    - cron: '0 0 5 * *' # Запуск 5-го числа каждого месяца
+    - cron: '0 0 10 * *' # Запуск 10-го числа каждого месяца
   workflow_dispatch: # Кнопка для ручного запуска
 
 jobs:
@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
