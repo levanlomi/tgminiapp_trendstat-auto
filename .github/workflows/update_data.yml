@@ -1,0 +1,48 @@
+name: Update TrendStat Data
+
+on:
+  schedule:
+    - cron: '0 0 5 * *' # Запуск 5-го числа каждого месяца
+  workflow_dispatch: # Кнопка для ручного запуска
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create Google Creds file
+        run: echo '${{ secrets.GOOGLE_CREDS_JSON }}' > google_creds.json
+
+      - name: Run Wordstat Parser
+        env:
+          YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
+          FOLDER_ID: ${{ secrets.FOLDER_ID }}
+        run: python wordstate.py
+
+      - name: Run Autostat Parser
+        run: python autostat.py
+
+      - name: Run Data Processor & AI
+        env:
+          YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
+          FOLDER_ID: ${{ secrets.FOLDER_ID }}
+        run: python processor.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add data.json
+          git commit -m "Auto-update data.json" || exit 0
+          git push
