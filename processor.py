@@ -536,7 +536,7 @@ output = {
     "ai_insight_brands": ai_text_brands
 }
 
-for json_path in ('data.json', '../frontend/data.json'):
+for json_path in ('data.json', '../data.json'):
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
