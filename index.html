@@ -1220,11 +1220,12 @@
             options: {
                 onLeave: (event, elements, chart) => {
                 chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-                chart.update();
+                chart.update('none');
                 },
                 customSeasonality: data.charts.main_trend.seasonality, 
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 0 },
                 plugins: {
                     legend: { 
                         display: true, position: 'top', align: 'center', maxWidth: 600,
@@ -1339,6 +1340,7 @@
                 maxScaleValue: maxIndex, // Передаем максимум в плагин
                 centerTextColor: document.body.classList.contains('light-theme') ? '#111827' : '#f8fafc', 
                 aspectRatio: 1, 
+                animation: { duration: 0 },
                 layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
                 plugins: { legend: { display: false }, tooltip: { enabled: false } },
                 maintainAspectRatio: true
@@ -1365,6 +1367,7 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 0 },
                 layout: {
                     padding: {
                         right: 30 // <--- ОТСТУП СПРАВА В ПИКСЕЛЯХ (попробуй 20, 30 или 40)
@@ -1585,23 +1588,23 @@
                 window.mainChartInstance.options.scales.yInterest.grid.color = gridColor;
                 window.mainChartInstance.options.scales.yInterest.ticks.color = isLight ? '#0891b2' : '#22d3ee';
                 window.mainChartInstance.options.scales.ySales.ticks.color = isLight ? '#2563eb' : '#3b82f6';
-                window.mainChartInstance.update();
+                window.mainChartInstance.update('none');
             }
             if (window.indexChartInstance) {
                 window.indexChartInstance.options.scales.x.ticks.color = textColor;
-                window.indexChartInstance.update();
+                window.indexChartInstance.update('none');
             }
             if (window.gaugeChartInstance) {
                 window.gaugeChartInstance.options.centerTextColor = isLight ? '#111827' : '#f8fafc';
                 window.gaugeChartInstance.data.datasets[0].backgroundColor[1] = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)';
-                window.gaugeChartInstance.update();
+                window.gaugeChartInstance.update('none');
             }
             if (window.industrySalesMixChartInstance) {
                 window.industrySalesMixChartInstance.options.scales.x.ticks.color = textColor;
                 window.industrySalesMixChartInstance.options.scales.y.grid.color = gridColor;
                 window.industrySalesMixChartInstance.options.scales.y.ticks.color = textColor;
                 window.industrySalesMixChartInstance.options.plugins.legend.labels.color = textColor;
-                window.industrySalesMixChartInstance.update();
+                window.industrySalesMixChartInstance.update('none');
             }
             if (window.aggMainChartInstance) {
                 window.aggMainChartInstance.options.scales.x.ticks.color = textColor;
