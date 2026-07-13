@@ -536,7 +536,6 @@ output = {
     "ai_insight_brands": ai_text_brands
 }
 
-# Сохраняем файл один раз в корневую папку
 with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2)
 
