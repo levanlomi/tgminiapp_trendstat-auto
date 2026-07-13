@@ -2,7 +2,7 @@ name: Update TrendStat Data
 
 on:
   schedule:
-    - cron: '0 0 10 * *' # Запуск 10-го числа каждого месяца
+    - cron: '0 0 10,15 * *' # Запуск 10-го и 150го числа каждого месяца
   workflow_dispatch: # Кнопка для ручного запуска
 
 jobs:
