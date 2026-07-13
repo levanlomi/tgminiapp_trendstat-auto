@@ -710,7 +710,7 @@
         <div class="tabs">
             <div class="tab active" data-target="view-industry">Индустрия</div>
             <div class="tab" data-target="view-new">Новые авто</div>
-            <div class="tab" data-target="view-used">Поддержанные авто</div>
+            <div class="tab" data-target="view-used">Подержанные авто</div>
             <div class="tab" data-target="view-brands">Марки авто</div>
             <div class="tab" data-target="view-aggregators">Агрегаторы</div>
         </div>
@@ -761,7 +761,7 @@
             </div>
 
             <div class="chart-container">
-                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/поддержанных авто в категории</span><span class="only-mobile">Доля продаж новых/поддержанных<br>авто в категории</span></h2>
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/подержанных авто в категории</span><span class="only-mobile">Доля продаж новых/подержанных<br>авто в категории</span></h2>
                 <div class="chart-wrap chart-wrap--md">
                     <canvas id="industrySalesMixChart"></canvas>
                 </div>
@@ -819,7 +819,7 @@
             </div>
 
             <div class="chart-container">
-                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/поддержанных авто в категории</span><span class="only-mobile">Доля продаж новых/поддержанных<br>авто в категории</span></h2>
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/подержанных авто в категории</span><span class="only-mobile">Доля продаж новых/подержанных<br>авто в категории</span></h2>
                 <div class="chart-wrap chart-wrap--md">
                     <canvas id="newSalesMixChart"></canvas>
                 </div>
@@ -894,7 +894,7 @@
         </div>
         <!-- === КОНЕЦ ЭКРАНА МАРКИ АВТО === -->
 
-        <!-- === ЭКРАН: ПОДДЕРЖАННЫЕ АВТО === -->
+        <!-- === ЭКРАН: ПОДЕРЖАННЫЕ АВТО === -->
         <div id="view-used" class="view-section">
             <div class="kpi-grid">
                 <div class="kpi-card">
@@ -916,15 +916,15 @@
             </div>
 
             <div class="chart-container">
-                <h2 style="margin-bottom: 0px;">Динамика интереса и продаж поддержанных авто</h2>
+                <h2 style="margin-bottom: 0px;">Динамика интереса и продаж подержанных авто</h2>
                 <div class="chart-wrap">
                     <canvas id="usedMainChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-container">
-                <h2><span class="only-desktop">Индекс покупательской активности для поддержанных авто</span><span class="only-mobile">Индекс покупательской активности<br>для поддержанных авто</span></h2>
-                <div class="chart-subtitle">отношение уровня интереса к поддержанным авто к количеству их покупок,<br>нормированное по 10-балльной шкале</div>
+                <h2><span class="only-desktop">Индекс покупательской активности для подержанных авто</span><span class="only-mobile">Индекс покупательской активности<br>для подержанных авто</span></h2>
+                <div class="chart-subtitle">отношение уровня интереса к подержанным авто к количеству их покупок,<br>нормированное по 10-балльной шкале</div>
                 <div class="index-grid">
                     <div class="gauge-container">
                         <div class="gauge-wrapper">
@@ -939,7 +939,7 @@
             </div>
 
             <div class="chart-container">
-                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/поддержанных авто в категории</span><span class="only-mobile">Доля продаж новых/поддержанных<br>авто в категории</span></h2>
+                <h2 style="margin-bottom: 0px;"><span class="only-desktop">Доля продаж новых/подержанных авто в категории</span><span class="only-mobile">Доля продаж новых/подержанных<br>авто в категории</span></h2>
                 <div class="chart-wrap chart-wrap--md">
                     <canvas id="usedSalesMixChart"></canvas>
                 </div>
@@ -947,10 +947,10 @@
 
             <div class="ai-insight">
                 <strong>Краткая сводка ✨</strong>
-                <span id="ai-text-used">Аналитика по поддержанным авто загружается...</span>
+                <span id="ai-text-used">Аналитика по подержанным авто загружается...</span>
             </div>
         </div>
-        <!-- === КОНЕЦ ЭКРАНА ПОДДЕРЖАННЫЕ АВТО === -->
+        <!-- === КОНЕЦ ЭКРАНА ПОДЕРЖАННЫЕ АВТО === -->
     
         <!-- === ЭКРАН 2: АГРЕГАТОРЫ === -->
         <div id="view-aggregators" class="view-section">
@@ -1359,7 +1359,7 @@
             return month === 0 ? date.getFullYear() : monthNames[month];
         });
 
-// --- ЗАПОЛНЕНИЕ ВКЛАДКИ ПОДДЕРЖАННЫЕ АВТО ---
+// --- ЗАПОЛНЕНИЕ ВКЛАДКИ ПОДЕРЖАННЫЕ АВТО ---
         if (data.kpi_used) {
             document.getElementById('kpi-used-avg').innerText = data.kpi_used.avg_monthly + ' млн';
             document.getElementById('kpi-used-share').innerText = data.kpi_used.share + '%';
@@ -1653,7 +1653,7 @@
                     labels: formattedLabels,
                     datasets: [
                         {
-                            label: 'Поддержанные',
+                            label: 'Подержанные',
                             data: industrySalesMix.used_sales,
                             backgroundColor: 'rgba(59, 130, 246, 0.85)',
                             borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
@@ -2418,7 +2418,7 @@
                     labels: newFormattedLabels,
                     datasets: [
                         {
-                            label: 'Поддержанные',
+                            label: 'Подержанные',
                             data: salesMix.used_sales,
                             backgroundColor: 'rgba(59, 130, 246, 0.85)',
                             borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
@@ -2567,7 +2567,7 @@
             updateChartsForTheme(document.body.classList.contains('light-theme'));
         }
 
-        // === ГРАФИКИ ПОДДЕРЖАННЫХ АВТО (создаются при первом открытии вкладки) ===
+        // === ГРАФИКИ ПОДЕРЖАННЫХ АВТО (создаются при первом открытии вкладки) ===
         function initUsedCharts() {
             if (window.usedChartsInitialized || !data.charts_used) return;
 
@@ -2713,7 +2713,7 @@
                     labels: usedFormattedLabels,
                     datasets: [
                         {
-                            label: 'Поддержанные',
+                            label: 'Подержанные',
                             data: data.charts_used.sales_mix.used_sales,
                             backgroundColor: 'rgba(59, 130, 246, 0.85)',
                             borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
