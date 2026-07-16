@@ -3,9 +3,9 @@ name: Update TrendStat data
 on:
   schedule:
     # GitHub cron uses UTC. Collection runs hourly on the 14th-15th.
-    - cron: "0 * 14,15 * *"
+    - cron: "0 * 11,12 * *"
     # Build the dashboard after sales data is usually available.
-    - cron: "0 6 16 * *"
+    - cron: "0 6 21 * *"
   workflow_dispatch:
     inputs:
       mode:
