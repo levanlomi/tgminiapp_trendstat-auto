@@ -2,10 +2,12 @@ name: Update TrendStat data
 
 on:
   schedule:
-    # GitHub cron uses UTC. Collection runs hourly on the 14th-15th.
-    - cron: "0 * 11,12 * *"
-    # Build the dashboard after sales data is usually available.
-    - cron: "0 6 21 * *"
+    # TEMP Aug 2026 catch-up (UTC).
+    # 26th from 08:00 UTC = 15:00 UTC+7, then full 27–28 UTC days.
+    - cron: "0 8-23 26 * *"
+    - cron: "0 * 27,28 * *"
+    # Sales + data.json after the collect window (01:00 UTC+7 on Aug 29).
+    - cron: "0 18 28 * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -28,7 +30,10 @@ jobs:
   collect-wordstat:
     name: Collect Wordstat batch
     if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '0 * 14,15 * *') ||
+      (github.event_name == 'schedule' && (
+        github.event.schedule == '0 8-23 26 * *' ||
+        github.event.schedule == '0 * 27,28 * *'
+      )) ||
       (github.event_name == 'workflow_dispatch' && inputs.mode == 'collect')
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -69,7 +74,7 @@ jobs:
   build-dashboard:
     name: Build and publish dashboard data
     if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '0 6 16 * *') ||
+      (github.event_name == 'schedule' && github.event.schedule == '0 18 28 * *') ||
       (github.event_name == 'workflow_dispatch' && inputs.mode == 'build')
     runs-on: ubuntu-latest
     timeout-minutes: 20
